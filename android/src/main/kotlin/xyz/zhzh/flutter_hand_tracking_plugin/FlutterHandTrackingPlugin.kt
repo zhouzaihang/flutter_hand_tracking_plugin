@@ -56,9 +56,9 @@ class FlutterHandTrackingPlugin(texturesRegistry: TextureRegistry) : MethodCallH
         when (call.method) {
             "getPlatformVersion" -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
             "create" -> {
-                val arguments = call.arguments as Map<String, Int>
-                val width = arguments.getValue("width").toInt()
-                val height = arguments.getValue("height").toInt()
+                val arguments = call.arguments as Map<*, *>
+                val width = arguments["width"] as Int
+                val height = arguments["height"] as Int
                 previewFrameTexture = entry.surfaceTexture()
                 previewFrameTexture!!.setDefaultBufferSize(width, height)
 
