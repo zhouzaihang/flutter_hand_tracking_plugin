@@ -1,14 +1,9 @@
 package xyz.zhzh.flutter_hand_tracking_plugin
 
-import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.SurfaceTexture
 import android.view.Surface
-import android.view.SurfaceView
 import androidx.annotation.NonNull
-import com.google.mediapipe.components.CameraHelper
-import com.google.mediapipe.components.ExternalTextureConverter
-import com.google.mediapipe.components.FrameProcessor
+import com.google.mediapipe.components.*
 import com.google.mediapipe.formats.proto.LandmarkProto
 import com.google.mediapipe.glutil.EglManager
 import io.flutter.plugin.common.MethodCall
@@ -19,7 +14,7 @@ import io.flutter.plugin.common.PluginRegistry.Registrar
 import io.flutter.view.TextureRegistry
 
 /** FlutterHandTrackingPlugin */
-class FlutterHandTrackingPlugin(texturesRegistry: TextureRegistry) : MethodCallHandler {
+class FlutterHandTrackingPlugin(private val registry: Registrar) : MethodCallHandler {
     // This static function is optional and equivalent to onAttachedToEngine. It supports the old
     // pre-Flutter-1.12 Android projects. You are encouraged to continue supporting
     // plugin registration via this function while apps migrate to use the new Android APIs
@@ -31,8 +26,6 @@ class FlutterHandTrackingPlugin(texturesRegistry: TextureRegistry) : MethodCallH
     // in the same class.
     // {@link SurfaceTexture} where the camera-preview frames can be accessed.
     private var previewFrameTexture: SurfaceTexture? = null
-    // {@link SurfaceView} that displays the camera-preview frames processed by a MediaPipe graph.
-    private var previewDisplayView: SurfaceView? = null
     // Creates and manages an {@link EGLContext}.
     private var eglManager: EglManager? = null
     // Sends camera-preview frames into a MediaPipe graph for processing, and displays the processed
@@ -41,14 +34,18 @@ class FlutterHandTrackingPlugin(texturesRegistry: TextureRegistry) : MethodCallH
     // Converts the GL_TEXTURE_EXTERNAL_OES texture from Android camera into a regular texture to be
     // consumed by {@link FrameProcessor} and the underlying MediaPipe graph.
     private var converter: ExternalTextureConverter? = null
+    // Handles camera access via the {@link CameraX} Jetpack support library.
+    private var cameraHelper: CameraXPreviewHelper? = null
 
-    private val entry: TextureRegistry.SurfaceTextureEntry = texturesRegistry.createSurfaceTexture()
+    private val entry: TextureRegistry.SurfaceTextureEntry = registry.textures().createSurfaceTexture()
 
     private var surface: Surface? = null
 
     init { // Load all native libraries needed by the app.
         System.loadLibrary("mediapipe_jni")
         System.loadLibrary("opencv_java3")
+
+        PermissionHelper.checkAndRequestCameraPermissions(registry.activity())
     }
 
     companion object {
@@ -84,7 +81,7 @@ class FlutterHandTrackingPlugin(texturesRegistry: TextureRegistry) : MethodCallH
         @JvmStatic
         fun registerWith(registrar: Registrar) {
             val channel = MethodChannel(registrar.messenger(), NAMESPACE)
-            channel.setMethodCallHandler(FlutterHandTrackingPlugin(registrar.textures()))
+            channel.setMethodCallHandler(FlutterHandTrackingPlugin(registrar))
         }
     }
 
@@ -98,19 +95,8 @@ class FlutterHandTrackingPlugin(texturesRegistry: TextureRegistry) : MethodCallH
                 val height = arguments["height"] as Int
                 previewFrameTexture = entry.surfaceTexture()
                 previewFrameTexture!!.setDefaultBufferSize(width, height)
-
-//                val surfaceView:SurfaceView = SurfaceView()
-
-                surface = Surface(previewFrameTexture)
-
-                val canvas: Canvas = surface!!.lockCanvas(null)
-                //这里的canvas 宽和高只有1个像素 因为surface得创建不是surfaceView拖管的，所以不能够draw实际内容，但是仍然可以绘制背景色
-                //int height = canvas.getHeight();
-                //int width = canvas.getWidth();
-                canvas.drawColor(Color.argb(255, 100, 125, 155))
-                surface!!.unlockCanvasAndPost(canvas)
-
                 // TODO: open camera and set Texture
+                startCamera()
                 result.success(entry.id())
             }
             "dispose" -> {
@@ -121,4 +107,13 @@ class FlutterHandTrackingPlugin(texturesRegistry: TextureRegistry) : MethodCallH
             else -> result.notImplemented()
         }
     }
+
+    private fun startCamera() {
+        cameraHelper = CameraXPreviewHelper()
+        cameraHelper!!.setOnCameraStartedListener { surfaceTexture: SurfaceTexture? ->
+            previewFrameTexture = surfaceTexture
+        }
+        cameraHelper!!.startCamera(registry.activity(), CAMERA_FACING,  /*surfaceTexture=*/null)
+    }
+
 }
