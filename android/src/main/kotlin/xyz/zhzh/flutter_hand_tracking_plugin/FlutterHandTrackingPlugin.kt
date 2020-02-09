@@ -1,12 +1,14 @@
 package xyz.zhzh.flutter_hand_tracking_plugin
 
 import android.app.Activity
+import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.graphics.SurfaceTexture
 import android.util.Log
 import android.util.Size
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
+import android.widget.Toast
 import androidx.annotation.NonNull
 import com.google.mediapipe.components.*
 import com.google.mediapipe.formats.proto.LandmarkProto
@@ -19,6 +21,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import io.flutter.plugin.common.PluginRegistry
 import io.flutter.plugin.common.PluginRegistry.Registrar
 import io.flutter.plugin.platform.PlatformView
 
@@ -86,6 +89,8 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
     private var cameraHelper: CameraXPreviewHelper? = null
 
     init {
+        r.addRequestPermissionsResultListener(CameraRequestPermissionsListener())
+
         this.methodChannel.setMethodCallHandler(this)
         setupPreviewDisplayView()
         // Initialize asset manager so that MediaPipe native libraries can access the app assets, e.g.,
@@ -151,6 +156,23 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
 
     override fun dispose() {
         converter!!.close()
+    }
+
+    private inner class CameraRequestPermissionsListener :
+            PluginRegistry.RequestPermissionsResultListener {
+        override fun onRequestPermissionsResult(requestCode: Int,
+                                                permissions: Array<out String>?,
+                                                grantResults: IntArray?): Boolean {
+            return if (requestCode != 0) false
+            else {
+                for (result in grantResults!!) {
+                    if (result == PERMISSION_GRANTED) onResume()
+                    else Toast.makeText(activity, "请授予摄像头权限", Toast.LENGTH_LONG).show()
+                }
+                true
+            }
+        }
+
     }
 
     private fun onResume() {
