@@ -18,10 +18,19 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Hand Tracking Example App'),
         ),
-        body: HandTrackingView(
-          onViewCreated: (HandTrackingViewController c) {
-            setState(() => _controller = c);
-          },
+        body: SingleChildScrollView(
+          child: Column(
+            children: <Widget>[
+              Container(
+                height: 300,
+                child: HandTrackingView(
+                  onViewCreated: (HandTrackingViewController c) {
+                    setState(() => _controller = c);
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -78,10 +78,15 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
     // {@link SurfaceView} that displays the camera-preview frames processed by a MediaPipe graph.
     private var previewDisplayView: SurfaceView = SurfaceView(r.context())
     // Creates and manages an {@link EGLContext}.
-    private var eglManager: EglManager? = null
+    private var eglManager: EglManager = EglManager(null)
     // Sends camera-preview frames into a MediaPipe graph for processing, and displays the processed
     // frames onto a {@link Surface}.
-    private var processor: FrameProcessor? = null
+    private var processor: FrameProcessor = FrameProcessor(
+            activity,
+            eglManager.nativeContext,
+            BINARY_GRAPH_NAME,
+            INPUT_VIDEO_STREAM_NAME,
+            OUTPUT_VIDEO_STREAM_NAME)
     // Converts the GL_TEXTURE_EXTERNAL_OES texture from Android camera into a regular texture to be
     // consumed by {@link FrameProcessor} and the underlying MediaPipe graph.
     private var converter: ExternalTextureConverter? = null
@@ -96,15 +101,86 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
         // Initialize asset manager so that MediaPipe native libraries can access the app assets, e.g.,
         // binary graphs.
         AndroidAssetUtil.initializeNativeAssetManager(activity)
-        eglManager = EglManager(null)
-        processor = FrameProcessor(
-                activity,
-                eglManager!!.nativeContext,
-                BINARY_GRAPH_NAME,
-                INPUT_VIDEO_STREAM_NAME,
-                OUTPUT_VIDEO_STREAM_NAME)
-        processor!!.videoSurfaceOutput.setFlipY(FLIP_FRAMES_VERTICALLY)
-        processor!!.addPacketCallback(
+        setupProcess()
+        PermissionHelper.checkAndRequestCameraPermissions(activity)
+
+        if (PermissionHelper.cameraPermissionsGranted(activity)) onResume()
+    }
+
+    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
+        if (call.method == "getPlatformVersion") {
+            result.success("Android ${android.os.Build.VERSION.RELEASE}")
+        } else {
+            result.notImplemented()
+        }
+    }
+
+    override fun getView(): SurfaceView? {
+        return previewDisplayView
+    }
+
+    override fun dispose() {
+        converter?.close()
+    }
+
+    private inner class CameraRequestPermissionsListener :
+            PluginRegistry.RequestPermissionsResultListener {
+        override fun onRequestPermissionsResult(requestCode: Int,
+                                                permissions: Array<out String>?,
+                                                grantResults: IntArray?): Boolean {
+            return if (requestCode != 0) false
+            else {
+                for (result in grantResults!!) {
+                    if (result == PERMISSION_GRANTED) onResume()
+                    else Toast.makeText(activity, "请授予摄像头权限", Toast.LENGTH_LONG).show()
+                }
+                true
+            }
+        }
+
+    }
+
+    private fun onResume() {
+        converter = ExternalTextureConverter(eglManager.context)
+        converter!!.setFlipY(FLIP_FRAMES_VERTICALLY)
+        converter!!.setConsumer(processor)
+        if (PermissionHelper.cameraPermissionsGranted(activity)) {
+            startCamera()
+        }
+    }
+
+    private fun setupPreviewDisplayView() {
+        previewDisplayView.visibility = View.GONE
+        previewDisplayView.holder.addCallback(
+                object : SurfaceHolder.Callback {
+                    override fun surfaceCreated(holder: SurfaceHolder) {
+                        processor.videoSurfaceOutput.setSurface(holder.surface)
+                    }
+
+                    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) { // (Re-)Compute the ideal size of the camera-preview display (the area that the
+                        // camera-preview frames get rendered onto, potentially with scaling and rotation)
+                        // based on the size of the SurfaceView that contains the display.
+                        val viewSize = Size(width, height)
+                        val displaySize = cameraHelper!!.computeDisplaySizeFromViewSize(viewSize)
+                        val isCameraRotated = cameraHelper!!.isCameraRotated
+                        // Connect the converter to the camera-preview frames as its input (via
+                        // previewFrameTexture), and configure the output width and height as the computed
+                        // display size.
+                        converter!!.setSurfaceTextureAndAttachToGLContext(
+                                previewFrameTexture,
+                                if (isCameraRotated) displaySize.height else displaySize.width,
+                                if (isCameraRotated) displaySize.width else displaySize.height)
+                    }
+
+                    override fun surfaceDestroyed(holder: SurfaceHolder) {
+                        processor.videoSurfaceOutput.setSurface(null)
+                    }
+                })
+    }
+
+    private fun setupProcess() {
+        processor.videoSurfaceOutput.setFlipY(FLIP_FRAMES_VERTICALLY)
+        processor.addPacketCallback(
                 OUTPUT_HAND_PRESENCE_STREAM_NAME
         ) { packet: Packet ->
             val handPresence = PacketGetter.getBool(packet)
@@ -114,7 +190,7 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
                         "[TS:" + packet.timestamp + "] Hand presence is false, no hands detected.")
             }
         }
-        processor!!.addPacketCallback(
+        processor.addPacketCallback(
                 OUTPUT_LANDMARKS_STREAM_NAME
         ) { packet: Packet ->
             val landmarksRaw = PacketGetter.getProtoBytes(packet)
@@ -137,80 +213,6 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
                 return@addPacketCallback
             }
         }
-        PermissionHelper.checkAndRequestCameraPermissions(activity)
-
-        if (PermissionHelper.cameraPermissionsGranted(activity)) onResume()
-    }
-
-    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
-        if (call.method == "getPlatformVersion") {
-            result.success("Android ${android.os.Build.VERSION.RELEASE}")
-        } else {
-            result.notImplemented()
-        }
-    }
-
-    override fun getView(): SurfaceView? {
-        return previewDisplayView
-    }
-
-    override fun dispose() {
-        converter!!.close()
-    }
-
-    private inner class CameraRequestPermissionsListener :
-            PluginRegistry.RequestPermissionsResultListener {
-        override fun onRequestPermissionsResult(requestCode: Int,
-                                                permissions: Array<out String>?,
-                                                grantResults: IntArray?): Boolean {
-            return if (requestCode != 0) false
-            else {
-                for (result in grantResults!!) {
-                    if (result == PERMISSION_GRANTED) onResume()
-                    else Toast.makeText(activity, "请授予摄像头权限", Toast.LENGTH_LONG).show()
-                }
-                true
-            }
-        }
-
-    }
-
-    private fun onResume() {
-        converter = ExternalTextureConverter(eglManager!!.context)
-        converter!!.setFlipY(FLIP_FRAMES_VERTICALLY)
-        converter!!.setConsumer(processor)
-        if (PermissionHelper.cameraPermissionsGranted(activity)) {
-            startCamera()
-        }
-    }
-
-    private fun setupPreviewDisplayView() {
-        previewDisplayView.visibility = View.GONE
-        previewDisplayView.holder.addCallback(
-                object : SurfaceHolder.Callback {
-                    override fun surfaceCreated(holder: SurfaceHolder) {
-                        processor!!.videoSurfaceOutput.setSurface(holder.surface)
-                    }
-
-                    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) { // (Re-)Compute the ideal size of the camera-preview display (the area that the
-                        // camera-preview frames get rendered onto, potentially with scaling and rotation)
-                        // based on the size of the SurfaceView that contains the display.
-                        val viewSize = Size(width, height)
-                        val displaySize = cameraHelper!!.computeDisplaySizeFromViewSize(viewSize)
-                        val isCameraRotated = cameraHelper!!.isCameraRotated
-                        // Connect the converter to the camera-preview frames as its input (via
-                        // previewFrameTexture), and configure the output width and height as the computed
-                        // display size.
-                        converter!!.setSurfaceTextureAndAttachToGLContext(
-                                previewFrameTexture,
-                                if (isCameraRotated) displaySize.height else displaySize.width,
-                                if (isCameraRotated) displaySize.width else displaySize.height)
-                    }
-
-                    override fun surfaceDestroyed(holder: SurfaceHolder) {
-                        processor!!.videoSurfaceOutput.setSurface(null)
-                    }
-                })
     }
 
     private fun startCamera() {
