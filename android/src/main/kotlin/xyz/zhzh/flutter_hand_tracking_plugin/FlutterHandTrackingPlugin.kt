@@ -21,6 +21,11 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
                     "$NAMESPACE/view",
                     HandTrackingViewFactory(registrar))
         }
+
+        init { // Load all native libraries needed by the app.
+            System.loadLibrary("mediapipe_jni")
+            System.loadLibrary("opencv_java3")
+        }
     }
 
     private val activity: Activity = r.activity()
