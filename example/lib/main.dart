@@ -15,7 +15,7 @@ class _MyAppState extends State<MyApp> {
   List<TableRow> landmarkList(List data) {
     var result = [
       TableRow(
-        children: <Widget>[Text("No"), Text("X"), Text("Y"), Text("Z")],
+        children: <Widget>[Text("No"), Text("X"), Text("Y")],
       )
     ];
     for (var i = 0; i < data.length; i++) {
@@ -23,8 +23,7 @@ class _MyAppState extends State<MyApp> {
         children: <Widget>[
           Text(i.toString()),
           Text(data[i].x.toString()),
-          Text(data[i].y.toString()),
-          Text(data[i].z.toString())
+          Text(data[i].y.toString())
         ],
       ));
     }
