@@ -1,0 +1,13 @@
+
+]FlowLimiterCalculatorinput_videoFINISHED:hand_rect"throttled_input_videoj
+FINISHED
+tPreviousLoopbackCalculatorMAIN:throttled_input_videoLOOP:hand_presence"PREV_LOOP:prev_hand_presencej
+LOOP
+›GateCalculatorthrottled_input_videoDISALLOW:prev_hand_presence"hand_detection_input_videoB9
+3type.googleapis.com/mediapipe.GateCalculatorOptions
+yHandDetectionSubgraphhand_detection_input_video"DETECTIONS:palm_detections"(NORM_RECT:hand_rect_from_palm_detections
+žHandLandmarkSubgraphIMAGE:throttled_input_videoNORM_RECT:hand_rect"LANDMARKS:hand_landmarks""NORM_RECT:hand_rect_from_landmarks"PRESENCE:hand_presence
+ŠPreviousLoopbackCalculatorMAIN:throttled_input_videoLOOP:hand_rect_from_landmarks"'PREV_LOOP:prev_hand_rect_from_landmarksj
+LOOP
+[MergeCalculatorhand_rect_from_palm_detectionsprev_hand_rect_from_landmarks"	hand_rect
+ŽRendererSubgraphIMAGE:throttled_input_videoLANDMARKS:hand_landmarksNORM_RECT:hand_rectDETECTIONS:palm_detections"IMAGE:output_videoRinput_videozoutput_video

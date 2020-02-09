@@ -1,8 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_hand_tracking_plugin/flutter_hand_tracking_plugin.dart';
+import 'package:flutter_hand_tracking_plugin/gen/landmark.pb.dart';
 
 void main() => runApp(MyApp());
 
@@ -12,32 +10,25 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
+  HandTrackingViewController _controller;
 
-  @override
-  void initState() {
-    super.initState();
-    initPlatformState();
-  }
-
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    try {
-      platformVersion = await FlutterHandTrackingPlugin.platformVersion;
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
+  List<TableRow> landmarkList(List data) {
+    var result = [
+      TableRow(
+        children: <Widget>[Text("No"), Text("X"), Text("Y"), Text("Z")],
+      )
+    ];
+    for (var i = 0; i < data.length; i++) {
+      result.add(TableRow(
+        children: <Widget>[
+          Text(i.toString()),
+          Text(data[i].x.toString()),
+          Text(data[i].y.toString()),
+          Text(data[i].z.toString())
+        ],
+      ));
     }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
+    return result;
   }
 
   @override
@@ -47,8 +38,32 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Hand Tracking Example App'),
         ),
-        body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+        body: SingleChildScrollView(
+          child: Column(
+            children: <Widget>[
+              Container(
+                height: 300,
+                child: HandTrackingView(
+                  onViewCreated: (HandTrackingViewController c) {
+                    setState(() => _controller = c);
+                  },
+                ),
+              ),
+              _controller == null
+                  ? Text("Please grant camera permissions.")
+                  : StreamBuilder<NormalizedLandmarkList>(
+                      stream: _controller.landMarksStream,
+                      initialData: NormalizedLandmarkList(),
+                      builder: (BuildContext context, AsyncSnapshot snapshot) =>
+                          snapshot.data.landmark != null &&
+                                  snapshot.data.landmark.length != 0
+                              ? Table(
+                                  children:
+                                      landmarkList(snapshot.data.landmark),
+                                )
+                              : Text("No hand landmarks."))
+            ],
+          ),
         ),
       ),
     );
