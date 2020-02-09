@@ -3,6 +3,8 @@ package xyz.zhzh.flutter_hand_tracking_plugin
 import android.app.Activity
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.graphics.SurfaceTexture
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.util.Size
 import android.view.SurfaceHolder
@@ -17,6 +19,7 @@ import com.google.mediapipe.framework.Packet
 import com.google.mediapipe.framework.PacketGetter
 import com.google.mediapipe.glutil.EglManager
 import com.google.protobuf.InvalidProtocolBufferException
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -42,7 +45,7 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
         // corner, whereas MediaPipe in general assumes the image origin is at top-left.
         private const val FLIP_FRAMES_VERTICALLY = true
 
-        private fun getLandmarksDebugString(landmarks: LandmarkProto.NormalizedLandmarkList): String {
+        private fun getLandmarksString(landmarks: LandmarkProto.NormalizedLandmarkList): String {
             var landmarksString = ""
             for ((landmarkIndex, landmark) in landmarks.landmarkList.withIndex()) {
                 landmarksString += ("\t\tLandmark["
@@ -73,6 +76,9 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
 
     private val activity: Activity = r.activity()
     private val methodChannel: MethodChannel = MethodChannel(r.messenger(), "$NAMESPACE/$id")
+    private val eventChannel: EventChannel = EventChannel(r.messenger(), "$NAMESPACE/$id/landmarks")
+    private var eventSink: EventChannel.EventSink? = null
+    private val uiThreadHandler: Handler = Handler(Looper.getMainLooper())
     // {@link SurfaceTexture} where the camera-preview frames can be accessed.
     private var previewFrameTexture: SurfaceTexture? = null
     // {@link SurfaceView} that displays the camera-preview frames processed by a MediaPipe graph.
@@ -97,6 +103,7 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
         r.addRequestPermissionsResultListener(CameraRequestPermissionsListener())
 
         this.methodChannel.setMethodCallHandler(this)
+        this.eventChannel.setStreamHandler(landMarksStreamHandler())
         setupPreviewDisplayView()
         // Initialize asset manager so that MediaPipe native libraries can access the app assets, e.g.,
         // binary graphs.
@@ -184,33 +191,43 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
                 OUTPUT_HAND_PRESENCE_STREAM_NAME
         ) { packet: Packet ->
             val handPresence = PacketGetter.getBool(packet)
-            if (!handPresence) {
-                Log.d(
-                        TAG,
-                        "[TS:" + packet.timestamp + "] Hand presence is false, no hands detected.")
-            }
+            if (!handPresence)
+//                Toast.makeText(
+//                        activity,
+//                        "[TS: ${packet.timestamp}] No hands detected.",
+//                        Toast.LENGTH_SHORT).show()
+                Log.d(TAG, "[TS:" + packet.timestamp + "] Hand presence is false, no hands detected.")
         }
         processor.addPacketCallback(
                 OUTPUT_LANDMARKS_STREAM_NAME
         ) { packet: Packet ->
             val landmarksRaw = PacketGetter.getProtoBytes(packet)
-            try {
+            if (eventSink == null) try {
                 val landmarks = LandmarkProto.NormalizedLandmarkList.parseFrom(landmarksRaw)
                 if (landmarks == null) {
                     Log.d(TAG, "[TS:" + packet.timestamp + "] No hand landmarks.")
                     return@addPacketCallback
                 }
                 // Note: If hand_presence is false, these landmarks are useless.
-                Log.d(
-                        TAG,
-                        "[TS:"
-                                + packet.timestamp
-                                + "] #Landmarks for hand: "
-                                + landmarks.landmarkCount)
-                Log.d(TAG, getLandmarksDebugString(landmarks))
+                Log.d(TAG, "[TS: ${packet.timestamp}] #Landmarks for hand: ${landmarks.landmarkCount}\n ${getLandmarksString(landmarks)}")
             } catch (e: InvalidProtocolBufferException) {
                 Log.e(TAG, "Couldn't Exception received - $e")
                 return@addPacketCallback
+            }
+            else uiThreadHandler.post { eventSink?.success(landmarksRaw) }
+        }
+    }
+
+    private fun landMarksStreamHandler(): EventChannel.StreamHandler {
+        return object : EventChannel.StreamHandler {
+
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
+                eventSink = events
+                Log.e(TAG, "Listen Event Channel")
+            }
+
+            override fun onCancel(arguments: Any?) {
+                eventSink = null
             }
         }
     }
