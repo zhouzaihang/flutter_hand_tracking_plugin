@@ -48,8 +48,8 @@ class _MyAppState extends State<MyApp> {
 
   void _onLandMarkStream(NormalizedLandmarkList landmarkList) {
     if (landmarkList.landmark != null && landmarkList.landmark.length != 0) {
-      _gesture =
-          HandGestureRecognition.handGestureRecognition(landmarkList.landmark);
+      setState(() => _gesture =
+          HandGestureRecognition.handGestureRecognition(landmarkList.landmark));
       if (_gesture == Gestures.ONE)
         continueDraw(landmarkList.landmark[8]);
       else if (_points.length != 0) finishDraw();
