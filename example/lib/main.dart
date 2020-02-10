@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hand_tracking_plugin/HandGestureRecognition.dart';
 import 'package:flutter_hand_tracking_plugin/flutter_hand_tracking_plugin.dart';
 import 'package:flutter_hand_tracking_plugin/gen/landmark.pb.dart';
 
@@ -11,25 +12,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   HandTrackingViewController _controller;
-
-  List<TableRow> landmarkList(List data) {
-    var result = [
-      TableRow(
-        children: <Widget>[Text("No"), Text("X"), Text("Y"), Text("Z")],
-      )
-    ];
-    for (var i = 0; i < data.length; i++) {
-      result.add(TableRow(
-        children: <Widget>[
-          Text(i.toString()),
-          Text(data[i].x.toString()),
-          Text(data[i].y.toString()),
-          Text(data[i].z.toString())
-        ],
-      ));
-    }
-    return result;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,9 +39,13 @@ class _MyAppState extends State<MyApp> {
                       builder: (BuildContext context, AsyncSnapshot snapshot) =>
                           snapshot.data.landmark != null &&
                                   snapshot.data.landmark.length != 0
-                              ? Table(
-                                  children:
-                                      landmarkList(snapshot.data.landmark),
+                              ? Text(
+                                  HandGestureRecognition.handGestureRecognition(
+                                          snapshot.data.landmark)
+                                      .toString(),
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 45),
                                 )
                               : Text("No hand landmarks."))
             ],
