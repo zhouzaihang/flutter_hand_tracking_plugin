@@ -13,24 +13,6 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   HandTrackingViewController _controller;
 
-  List<TableRow> landmarkList(List data) {
-    var result = [
-      TableRow(
-        children: <Widget>[Text("No"), Text("X"), Text("Y")],
-      )
-    ];
-    for (var i = 0; i < data.length; i++) {
-      result.add(TableRow(
-        children: <Widget>[
-          Text(i.toString()),
-          Text(data[i].x.toString()),
-          Text(data[i].y.toString())
-        ],
-      ));
-    }
-    return result;
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -60,11 +42,11 @@ class _MyAppState extends State<MyApp> {
                               ? Text(
                                   HandGestureRecognition.handGestureRecognition(
                                           snapshot.data.landmark)
-                                      .toString())
-//                              ? Table(
-//                                  children:
-//                                      landmarkList(snapshot.data.landmark),
-//                                )
+                                      .toString(),
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 45),
+                                )
                               : Text("No hand landmarks."))
             ],
           ),
