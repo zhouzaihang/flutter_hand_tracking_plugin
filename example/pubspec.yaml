@@ -20,6 +20,8 @@ dev_dependencies:
   flutter_hand_tracking_plugin:
     path: ../
 
+  flutter_colorpicker: any
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
