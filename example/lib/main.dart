@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hand_tracking_plugin/HandGestureRecognition.dart';
 import 'package:flutter_hand_tracking_plugin/flutter_hand_tracking_plugin.dart';
 import 'package:flutter_hand_tracking_plugin/gen/landmark.pb.dart';
 
@@ -57,10 +58,14 @@ class _MyAppState extends State<MyApp> {
                       builder: (BuildContext context, AsyncSnapshot snapshot) =>
                           snapshot.data.landmark != null &&
                                   snapshot.data.landmark.length != 0
-                              ? Table(
-                                  children:
-                                      landmarkList(snapshot.data.landmark),
-                                )
+                              ? Text(
+                                  HandGestureRecognition.handGestureRecognition(
+                                          snapshot.data.landmark)
+                                      .toString())
+//                              ? Table(
+//                                  children:
+//                                      landmarkList(snapshot.data.landmark),
+//                                )
                               : Text("No hand landmarks."))
             ],
           ),
