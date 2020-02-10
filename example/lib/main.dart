@@ -6,7 +6,7 @@ import 'package:flutter_hand_tracking_plugin/HandGestureRecognition.dart';
 import 'package:flutter_hand_tracking_plugin/flutter_hand_tracking_plugin.dart';
 import 'package:flutter_hand_tracking_plugin/gen/landmark.pb.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(MaterialApp(home: MyApp()));
 
 class MyApp extends StatefulWidget {
   @override
@@ -122,117 +122,115 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Hand Tracking Example App'),
-        ),
-        body: SingleChildScrollView(
-          child: Column(
-            children: <Widget>[
-              Container(
-                height: 300,
-                child: HandTrackingView(
-                  onViewCreated: (HandTrackingViewController c) => setState(() {
-                    _controller = c;
-                    if (_controller != null)
-                      _controller.landMarksStream.listen(_onLandMarkStream);
-                  }),
-                ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Hand Tracking Example App'),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: <Widget>[
+            Container(
+              height: 300,
+              child: HandTrackingView(
+                onViewCreated: (HandTrackingViewController c) => setState(() {
+                  _controller = c;
+                  if (_controller != null)
+                    _controller.landMarksStream.listen(_onLandMarkStream);
+                }),
               ),
-              _controller == null
-                  ? Text(
-                      "Please grant camera permissions and reopen the application.")
-                  : Column(
-                      children: <Widget>[
-                        Text(_gesture == null
-                            ? "No hand landmarks."
-                            : _gesture.toString()),
-                        CustomPaint(
-                          size: Size(_canvasWeight, _canvasHeight),
-                          painter: DrawingPainter(
-                            pointsList: _points,
-                          ),
-                        )
-                      ],
-                    )
-            ],
-          ),
-        ),
-        bottomNavigationBar: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Container(
-            padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(50.0),
-                color: Colors.greenAccent),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            ),
+            _controller == null
+                ? Text(
+                    "Please grant camera permissions and reopen the application.")
+                : Column(
                     children: <Widget>[
-                      IconButton(
-                        icon: Icon(Icons.album),
-                        onPressed: () => setState(() {
-                          if (_selectedMode == SelectedMode.StrokeWidth)
-                            _showBottomList = !_showBottomList;
-                          _selectedMode = SelectedMode.StrokeWidth;
-                        }),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.opacity),
-                        onPressed: () => setState(() {
-                          if (_selectedMode == SelectedMode.Opacity)
-                            _showBottomList = !_showBottomList;
-                          _selectedMode = SelectedMode.Opacity;
-                        }),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.color_lens),
-                        onPressed: () => setState(() {
-                          if (_selectedMode == SelectedMode.Color)
-                            _showBottomList = !_showBottomList;
-                          _selectedMode = SelectedMode.Color;
-                        }),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.clear),
-                        onPressed: () => setState(() {
-                          _showBottomList = false;
-                          _points.clear();
-                        }),
-                      ),
+                      Text(_gesture == null
+                          ? "No hand landmarks."
+                          : _gesture.toString()),
+                      CustomPaint(
+                        size: Size(_canvasWeight, _canvasHeight),
+                        painter: DrawingPainter(
+                          pointsList: _points,
+                        ),
+                      )
                     ],
-                  ),
-                  Visibility(
-                    child: (_selectedMode == SelectedMode.Color)
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: getColorList(),
-                          )
-                        : Slider(
-                            value: (_selectedMode == SelectedMode.StrokeWidth)
-                                ? _strokeWidth
-                                : _opacity,
-                            max: (_selectedMode == SelectedMode.StrokeWidth)
-                                ? 50.0
-                                : 1.0,
-                            min: 0.0,
-                            onChanged: (val) {
-                              setState(() {
-                                if (_selectedMode == SelectedMode.StrokeWidth)
-                                  _strokeWidth = val;
-                                else
-                                  _opacity = val;
-                              });
-                            }),
-                    visible: _showBottomList,
-                  ),
-                ],
-              ),
+                  )
+          ],
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(50.0),
+              color: Colors.greenAccent),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    IconButton(
+                      icon: Icon(Icons.album),
+                      onPressed: () => setState(() {
+                        if (_selectedMode == SelectedMode.StrokeWidth)
+                          _showBottomList = !_showBottomList;
+                        _selectedMode = SelectedMode.StrokeWidth;
+                      }),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.opacity),
+                      onPressed: () => setState(() {
+                        if (_selectedMode == SelectedMode.Opacity)
+                          _showBottomList = !_showBottomList;
+                        _selectedMode = SelectedMode.Opacity;
+                      }),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.color_lens),
+                      onPressed: () => setState(() {
+                        if (_selectedMode == SelectedMode.Color)
+                          _showBottomList = !_showBottomList;
+                        _selectedMode = SelectedMode.Color;
+                      }),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.clear),
+                      onPressed: () => setState(() {
+                        _showBottomList = false;
+                        _points.clear();
+                      }),
+                    ),
+                  ],
+                ),
+                Visibility(
+                  child: (_selectedMode == SelectedMode.Color)
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: getColorList(),
+                        )
+                      : Slider(
+                          value: (_selectedMode == SelectedMode.StrokeWidth)
+                              ? _strokeWidth
+                              : _opacity,
+                          max: (_selectedMode == SelectedMode.StrokeWidth)
+                              ? 50.0
+                              : 1.0,
+                          min: 0.0,
+                          onChanged: (val) {
+                            setState(() {
+                              if (_selectedMode == SelectedMode.StrokeWidth)
+                                _strokeWidth = val;
+                              else
+                                _opacity = val;
+                            });
+                          }),
+                  visible: _showBottomList,
+                ),
+              ],
             ),
           ),
         ),
