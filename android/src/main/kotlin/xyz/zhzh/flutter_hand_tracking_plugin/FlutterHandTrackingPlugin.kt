@@ -223,7 +223,7 @@ class FlutterHandTrackingPlugin(r: Registrar, id: Int) : PlatformView, MethodCal
 
             override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
                 eventSink = events
-                Log.e(TAG, "Listen Event Channel")
+                // Log.e(TAG, "Listen Event Channel")
             }
 
             override fun onCancel(arguments: Any?) {
