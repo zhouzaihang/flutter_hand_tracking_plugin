@@ -5,6 +5,7 @@
 ![demo1](img/demo1.gif)![demo2](img/demo2.gif)
 
 > 源码托管于 Github: [https://github.com/zhouzaihang/flutter_hand_tracking_plugin](https://github.com/zhouzaihang/flutter_hand_tracking_plugin)
+
 > [Bilibili 演示](https://www.bilibili.com/video/av92842489/)
 
 ## 使用
