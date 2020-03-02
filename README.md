@@ -1,12 +1,11 @@
 # Flutter Hand Tracking Plugin
 
-<iframe src="//player.bilibili.com/player.html?aid=92842489&cid=158512320&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
-
 这个 `Flutter Packge` 是为了实现调用 `Andorid` 设备摄像头精确追踪并识别十指的运动路径/轨迹和手势动作, 且输出22个手部关键点以支持更多手势自定义. 基于这个包可以编写业务逻辑将手势信息实时转化为指令信息: 一二三四五, rock, spiderman...同时基于 `Flutter` 可以对不同手势编写不同特效. 可用于短视频直播特效, 智能硬件等领域, 为人机互动带来更自然丰富的体验.
 
 ![demo1](img/demo1.gif)![demo2](img/demo2.gif)
 
 > 源码托管于 Github: [https://github.com/zhouzaihang/flutter_hand_tracking_plugin](https://github.com/zhouzaihang/flutter_hand_tracking_plugin)
+> [Bilibili 演示](https://www.bilibili.com/video/av92842489/)
 
 ## 使用
 
@@ -220,7 +219,7 @@ class HandTrackingViewController {
 
 这里利用 `MediaPipe` 将摄像头数据传入到手势检测的 `TFlite` 模型中处理. 然后再把整套程序构建为 `Android archive library`.
 
-`MediaPipe Android archive library` 是一个把 `MediaPipe` 与 `Gradle` 一起使用的方法. `MediaPipe` 不会发布可用于所有项目的常规AAR, 所以需要开发者自行构建. 这是官方给出的![MediaPipe 安装教程](https://github.com/google/mediapipe/blob/master/mediapipe/docs/install.md). 笔者这里是 `Ubuntu` 系统, 选择了 `Docker` 的安装方式(`git clone` 和 `docker pull` 的时候网络不稳定的话可以设置一下 `proxy` 或换源).
+`MediaPipe Android archive library` 是一个把 `MediaPipe` 与 `Gradle` 一起使用的方法. `MediaPipe` 不会发布可用于所有项目的常规AAR, 所以需要开发者自行构建. 这是官方给出的[MediaPipe 安装教程](https://github.com/google/mediapipe/blob/master/mediapipe/docs/install.md). 笔者这里是 `Ubuntu` 系统, 选择了 `Docker` 的安装方式(`git clone` 和 `docker pull` 的时候网络不稳定的话可以设置一下 `proxy` 或换源).
 
 安装完成后使用 `docker exec -it mediapipe /bin/bash` 进入 `bash` 操作.
 
