@@ -10,6 +10,8 @@
 
 ## 使用
 
+> 项目中使用的 `android/libs/hand_tracking_aar.aar` 托管在 `git-lfs`, 在你下载之后需要确认 `.aar` 文件是否存在(且文件超过100MB). 如果你没有安装 `git-lfs` 你可能需要手动下载, 然后替换到你的项目路径中.
+
 This project is a starting point for a Flutter
 [plug-in package](https://flutter.dev/developing-packages/),
 a specialized package that includes platform-specific implementation code for
