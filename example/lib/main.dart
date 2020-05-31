@@ -72,7 +72,7 @@ class _MyAppState extends State<MyApp> {
               child: ColorPicker(
                 pickerColor: _pickerColor,
                 onColorChanged: (color) => _pickerColor = color,
-                enableLabel: true,
+//                enableLabel: true,
                 pickerAreaHeightPercent: 0.8,
               ),
             ),
